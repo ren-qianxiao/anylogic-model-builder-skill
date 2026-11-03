@@ -1,61 +1,57 @@
 ---
 name: anylogic-model-builder
-description: "Build AnyLogic 8.x models by cloning and adapting official examples instead of handwriting .alp XML. Use when the user asks to 建一个 AnyLogic 模型, 用 AnyLogic 仿真, 把某个流程做成模型, 在现有模型里加 AGV/行人/输送线, 或 wants a deliverable .alp. Also use when inspecting or debugging an .alp XML file, choosing which built-in example to copy, or adapting an existing model's parameters. Critical boundary: this skill clones verified templates; it does NOT hand-construct .alp from scratch — that has been proven to produce files AnyLogic opens blank."
+description: "Build AnyLogic 8.x models from a curated structural template library. Use when the user asks to 建一个 AnyLogic 模型, 用 AnyLogic 仿真, 把某个流程做成模型, 在现有模型里加 AGV/行人/输送线/吊机, 或 wants a deliverable .alp. Also use when inspecting or debugging an .alp XML file, choosing a reference architecture, or parameterizing an existing model. Delivers by assembling a structural skeleton and filling parameters; does not hand-construct .alp from scratch."
 ---
 
 # AnyLogic 模型构建器
 
-## 先读这条：能力边界
+## 能力边界
 
-**能做**：复制官方示例骨架、改参数/名字/引用、解析 `.alp` 结构、选案例、算容量。
+**能交付**：结构模板选型、骨架装配、参数填充、结构解析、容量估算。
 
-**不能做**：从零手写一个可加载的 `.alp`。实测两次都导致 AnyLogic 打开空白。原因是 `.alp` 有私有结构（嵌套层级、泛型 ID、连接器引用），没有 schema、没有命令行校验，手写无法保证。
+**不承诺**：任意新结构的零参考构造。`.alp` 是私有 XML 格式，没有 schema 和命令行校验；脱离模板手写，加载失败的概率很高。
 
-所以工作流永远是：**找现成模板 → 复制 → 最小改动**，不是生成。
+所以工作流是：**选参考架构 → 装配骨架 → 参数化 → 打开验证**。
 
 ## 工作流
 
 ### 1. 需求拆解
 
-从用户描述里提取：对象（行人/托盘/AGV/车辆）、流程（从哪到哪）、资源（人/车/月台）、目标（吞吐/等待/成本）。缺的追问，一次不超过两项。
+提取：对象（行人/托盘/AGV/车辆）、流程（从哪到哪）、资源（人/车/月台）、目标（吞吐/等待/成本）。缺的追问，一次不超过两项。
 
-### 2. 选官方示例
+### 2. 选结构模板
 
-查 `references/official-examples.md`（118 个案例的索引，含块数量、主块、库、3D 数）。按**主块**匹配，不按行业名匹配。
+查 `references/templates.md`（12 类场景的模板，含关键块、可提取链条、依赖）和 `references/official-examples.md`（118 个参考模型索引）。按**流程环节**匹配，不按行业名匹配。
 
-示例安装路径：
+参考模型根目录：
 
 ```
-E:/AnyLogic/AnyLogic 8.9 Professional/plugins/com.anylogic.examples_8.9.8.*/models/<案例名>/<案例名>.alp
+E:/AnyLogic/AnyLogic 8.9 Professional/plugins/com.anylogic.examples_8.9.8.*/
+├── models/        物流、供应链、生产、交通
+└── basicmodels/   行人、流程、基础库
 ```
 
-基础模型（行人、流程等）在 `basicmodels/<案例名>/` 下。
+### 3. 装配骨架
 
-### 3. 复制骨架
+两种方式：
 
-用 `scripts/clone_template.py`：
+- 整段搬运：`scripts/graft_blocks.py`，从参考模型提取块、连接器、目标线，装配进目标模型
+- 新建模型：`scripts/clone_template.py`，以参考模型为底稿生成新模型
 
-```bash
-python -I scripts/clone_template.py \
-  --src "E:/AnyLogic/.../models/Supply Chain/Supply Chain.alp" \
-  --dst "C:/Users/<user>/Models/MyModel/MyModel.alp" \
-  --name "MyModel"
-```
+装配后只调整 `Id`、`Name`、`PackageName`、坐标，不改块的内部结构。
 
-它只改模型名和输出路径，不动内部结构。这样生成的文件一定能加载。
+### 4. 参数化
 
-### 4. 改参数
-
-改参数前先读 `references/alp-structure.md`，确认要改的字段在哪一层。原则：
+改参数前读 `references/alp-structure.md`，确认字段位置。原则：
 
 - 优先改 `<Parameter>` 的 `<Value>`，不新增元素
-- 改引用时，所有 `PackageName` 同步改
-- 改块名时，所有 `Connector` 的 `ItemName` 同步改
-- 行人库的 `PedSource` 必须有 `locationLine`；`PedGoTo` 的 `locationLine` 指向目标线
+- 改引用时，所有 `PackageName` 同步
+- 改块名时，所有 `Connector` 的 `ItemName` 同步
+- 行人链的 `PedSource` 必须有 `locationLine`
 
 ### 5. 验证
 
-生成后让用户在 AnyLogic 打开。这是唯一可靠的验证方式，没有 CLI 替代。打开失败时读 `references/pitfalls.md` 对照。
+生成后在 AnyLogic 打开确认。这是唯一可靠的验证方式，没有 CLI 替代。失败时对照 `references/pitfalls.md`。
 
 ## .alp 结构速查
 
@@ -67,14 +63,14 @@ AnyLogicWorkspace
    │     └─ Presentation
    │        └─ Level
    │           ├─ Id/Name/.../LevelVisibility
-   │           └─ Presentation          ← 块、线、连接器都在这一层里
+   │           └─ Presentation          ← 块、线、连接器在这一层
    │              ├─ TargetLine
-   │              ├─ EmbeddedObject      ← 库块（PedSource 等）
+   │              ├─ EmbeddedObject      ← 库块
    │              └─ Connector
    └─ Experiments
 ```
 
-关键：`Level` 下面还有一层 `Presentation`。把元素直接放 `Level` 下，AnyLogic 打开是空白。
+关键：`Level` 下面还有一层 `Presentation`。元素放错层级，画布会空白。
 
 库块的识别方式：
 
@@ -104,42 +100,20 @@ AnyLogicWorkspace
 
 读 `references/pitfalls.md`。最贵的三个：
 
-1. **层级漏一层**：元素必须放在 `Level/Presentation` 下，不是 `Level` 下。
-2. **行人块缺线**：`PedSource.pedEnter` 报 `targetLine 未指定`，因为 `locationLine` 为空。
-3. **演示上限**：官方示例常有 `maxArrivals=25`、`lastOrderId<11`、`ordersListMaxLength=50`，不改则模型跑不出规模。
-
-## 整段复制（graft）
-
-当目标模型缺少一整条流程（如行人链、AGV 调度）时，**不要手写块**，从官方示例整段搬：
-
-```bash
-python -I scripts/graft_blocks.py \
-  --example "E:/AnyLogic/.../basicmodels/Areas with Restrictions for Pedestrians/Areas with Restrictions for Pedestrians.alp" \
-  --target "path/to/target.alp" \
-  --out "path/to/target_grafted.alp" \
-  --blocks clientSource,returnToMall,servedPerson,pedSettings \
-  --pkg-target <目标模型包名> \
-  --offset-x 140 --offset-y -380
-```
-
-它做四件事：
-
-1. 按名字提取 `EmbeddedObject` 块
-2. 提取**两端都在列表里**的 `Connector`
-3. 提取块引用到的 `TargetLine`（`locationLine`）
-4. 换 Id、包名、坐标，插入目标的 `Main/Presentation`，补齐库依赖
-
-限制：**必须把整条链路上的块都列出来**。只选中间两个，链条会断开（脚本不会自动补中间块）。运行后检查输出的 `dangling refs`，应为 0。
+1. **层级漏一层**：元素必须在 `Level/Presentation` 下。
+2. **行人块缺线**：`PedSource.pedEnter` 报 `targetLine 未指定`。
+3. **演示上限**：参考模型常有 `maxArrivals=25`、`lastOrderId<11`、`ordersListMaxLength=50`，不改则跑不出规模。
 
 ## 脚本
 
-- `scripts/inspect_alp.py`：输出 `.alp` 的结构摘要（智能体、块、连接、3D、实验），用于选型和比对。
-- `scripts/clone_template.py`：复制官方示例并改模型名，输出新 `.alp`。
-- `scripts/graft_blocks.py`：从示例整段搬运块、连接器、目标线到目标模型。
+- `scripts/inspect_alp.py`：解析 `.alp` 结构摘要
+- `scripts/clone_template.py`：以参考模型为底稿生成新模型
+- `scripts/graft_blocks.py`：装配块、连接器、目标线到目标模型
 
 三个脚本都不依赖 AnyLogic 运行。
 
-## 与 other skills 的分工
+## 与其他技能的分工
 
-- `anylogic-logistics-advisor`：仓储/供应链场景的选型、容量估算、建模蓝图。本技能负责“怎么把选中的案例变成文件”。
-- `wanghan-anylogic-help`：块/API 的官方文档与报错签名。本技能不重复解释单个块。
+- `anylogic-logistics-advisor`：仓储/供应链的选型、容量估算、建模蓝图
+- `wanghan-anylogic-help`：块/API 的官方文档与报错签名
+- 本技能：结构装配、参数化、输出 `.alp`

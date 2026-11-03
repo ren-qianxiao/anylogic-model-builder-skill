@@ -80,7 +80,7 @@
 
 - `GenericParameterSubstitute` 里的 `ItemName` 是库内部的固定泛型 ID，**不要改**。
 - `Parameters` 里没有 `<Value>` 的项表示使用库默认值，可以保留空。
-- 如果参数引用自定义 agent（如 `newPed` 指向示例里的 `Client`），复制到新模型后必须删除或改指向，否则编译失败。
+- 如果参数引用自定义 agent（如 `newPed` 指向示例里的 `Client`），迁移到新模型后必须删除或改指向，否则编译失败。
 
 ## 连接器
 
@@ -147,9 +147,9 @@ TargetLine(entryLine) → PedSource(locationLine=entryLine) → PedGoTo(location
 
 1. 改 `<Parameter>/<Value>` —— 最安全
 2. 改 `<Name>` 并同步所有引用 —— 中等
-3. 增删元素 —— 高风险，优先复制已有元素再改，不要手写新标签
+3. 增删元素 —— 高风险，优先复用已有元素再改，不要手写新标签
 
-## 整段复制的实操要点
+## 整段装配的实操要点
 
 从官方示例搬一条流程时，四样东西要一起搬：
 

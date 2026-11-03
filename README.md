@@ -1,47 +1,75 @@
-# anylogic-model-builder
+# AnyLogic Model Builder
 
-AnyLogic 8.x 模型构建技能：**复制已验证的官方示例，而不是手写 `.alp`**。
+为 AnyLogic 8.x 提供**结构模板库**和**模型装配工具**：按需求选择参考架构，装配骨架，填充参数，输出可交付的 `.alp`。
 
-## 为什么
+## 核心能力
 
-`.alp` 是 AnyLogic 的私有 XML 格式，没有 schema、没有命令行校验。实测从零手写会导致 AnyLogic 打开空白（层级、泛型 ID、连接器引用都无法凭记忆写对）。
+| 能力 | 说明 |
+|---|---|
+| 模板选型 | 12 类场景的参考架构，覆盖行人、物料搬运、输送、仓储、供应链、铁路、流体 |
+| 骨架装配 | 从参考模型提取块、连接器、目标线，装配进目标模型 |
+| 参数化 | 调整 Id、名称、包名、坐标、块参数 |
+| 结构解析 | 输出任意 `.alp` 的智能体、块、连接、3D、实验摘要 |
+| 容量估算 | 配合 `anylogic-logistics-advisor` 做资源规模测算 |
 
-因此本技能的工作方式是：
+## 模板库
+
+`references/templates.md` 收录 12 类模板：
+
+- 行人行走、行人统计
+- 配送中心收发货、输送线、多层拣选
+- 自由空间 AGV、多任务 AGV、共享机器人
+- 铁路到发编组
+- 三级供应链
+- 连续流管网、生产物流
+
+每个模板记录参考模型路径、关键块、可提取链条和库依赖。完整模型索引见 `references/official-examples.md`（118 个参考模型）。
+
+## 工作流
 
 ```
-需求 → 选官方示例 → 复制骨架 → 改参数 → 打开验证
+需求拆解 → 选结构模板 → 装配骨架 → 参数化 → 打开验证
 ```
 
-## 内容
-
-- `SKILL.md` — 工作流、能力边界、结构速查
-- `references/official-examples.md` — 118 个官方示例索引（块、库、3D、实验）
-- `references/alp-structure.md` — `.alp` 的层级、库块、连接器、行人库链条
-- `references/pitfalls.md` — 实测踩过的 10 个坑
-- `scripts/inspect_alp.py` — 解析任意 `.alp` 的结构摘要
-- `scripts/clone_template.py` — 复制官方示例并改模型名
-- `scripts/graft_blocks.py` — 从示例整段搬运块/连接器/目标线到目标模型
-
-## 用法
+## 脚本
 
 ```bash
-# 看结构
+# 查看模型结构
 python scripts/inspect_alp.py "path/to/model.alp"
 
-# 复制示例并改名
+# 以参考模型为底稿生成新模型
 python scripts/clone_template.py \
-  --src "E:/AnyLogic/.../models/Supply Chain/Supply Chain.alp" \
-  --dst "C:/Users/me/Models/MyModel/MyModel.alp" \
-  --name "MyModel"
+  --src "path/to/reference.alp" \
+  --dst "path/to/new.alp" \
+  --name "NewModel"
+
+# 装配块、连接器、目标线到目标模型
+python scripts/graft_blocks.py \
+  --example "path/to/reference.alp" \
+  --target "path/to/target.alp" \
+  --out "path/to/output.alp" \
+  --blocks blockA,blockB,blockC \
+  --pkg-target <package>
 ```
 
-## 能力边界
+## 结构说明
 
-- ✅ 选案例、复制骨架、改参数、解析结构
-- ❌ 从零构造可加载的 `.alp`（已实测失败）
-- 生成后必须用 AnyLogic 打开验证，没有 CLI 替代
+`.alp` 的层级、库块、连接器、目标线结构见 `references/alp-structure.md`。
+
+关键点：
+
+- 块必须位于 `Level/Presentation` 层
+- 库块用 `EmbeddedObject + ClassName` 标识
+- 连接器通过 `ItemName` 引用块和端口
+- 行人链需要 `TargetLine` 作为进入/离开边界
+
+## 已知边界
+
+- 模板覆盖范围内：可装配、可参数化、可交付
+- 模板覆盖范围外：需要先准备一个可加载的参考结构
+- 生成后用 AnyLogic 打开验证；没有命令行校验替代
 
 ## 相关技能
 
-- `anylogic-logistics-advisor` — 仓储/供应链的选型与容量估算
-- `wanghan-anylogic-help` — 官方文档与报错签名
+- `anylogic-logistics-advisor` — 仓储与供应链的选型、容量估算、建模蓝图
+- `wanghan-anylogic-help` — 官方文档索引与报错签名
