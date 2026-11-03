@@ -148,3 +148,24 @@ TargetLine(entryLine) → PedSource(locationLine=entryLine) → PedGoTo(location
 1. 改 `<Parameter>/<Value>` —— 最安全
 2. 改 `<Name>` 并同步所有引用 —— 中等
 3. 增删元素 —— 高风险，优先复制已有元素再改，不要手写新标签
+
+## 整段复制的实操要点
+
+从官方示例搬一条流程时，四样东西要一起搬：
+
+| 东西 | 怎么找 | 容易漏 |
+|---|---|---|
+| 块 | `<EmbeddedObject>` + `ClassName` | 中间块 |
+| 连接器 | `Source/TargetEmbeddedObjectReference` | 只搬两端会断链 |
+| 目标线 | 块的 `locationLine` 参数值 | 缺线则运行报 targetLine 未指定 |
+| 库依赖 | `RequiredLibraryReference` | 缺 pedestrian 库则编译失败 |
+
+改写时只动这四类字段：`Id`、`Name`（及引用）、`PackageName`、`X/Y`。块的 `<Parameters>` 结构不要动。
+
+已验证可用的模板位置：
+
+- 行人最小链：`basicmodels/Areas with Restrictions for Pedestrians/`，块 `clientSource → returnToMall → servedPerson`，配 `pedSettings` 和两条 `TargetLine`
+- 行人统计：`basicmodels/Pedestrian Flow Statistics/`（Main 里没有块，结构在别处，不适合直接搬）
+- 物流/供应链：`models/` 下的 39 个案例，索引见 `official-examples.md`
+
+搬运后跑 `graft_blocks.py`，检查输出的 `dangling refs` 是否为 0；再用 `inspect_alp.py` 确认块数增加。

@@ -108,12 +108,36 @@ AnyLogicWorkspace
 2. **行人块缺线**：`PedSource.pedEnter` 报 `targetLine 未指定`，因为 `locationLine` 为空。
 3. **演示上限**：官方示例常有 `maxArrivals=25`、`lastOrderId<11`、`ordersListMaxLength=50`，不改则模型跑不出规模。
 
+## 整段复制（graft）
+
+当目标模型缺少一整条流程（如行人链、AGV 调度）时，**不要手写块**，从官方示例整段搬：
+
+```bash
+python -I scripts/graft_blocks.py \
+  --example "E:/AnyLogic/.../basicmodels/Areas with Restrictions for Pedestrians/Areas with Restrictions for Pedestrians.alp" \
+  --target "path/to/target.alp" \
+  --out "path/to/target_grafted.alp" \
+  --blocks clientSource,returnToMall,servedPerson,pedSettings \
+  --pkg-target <目标模型包名> \
+  --offset-x 140 --offset-y -380
+```
+
+它做四件事：
+
+1. 按名字提取 `EmbeddedObject` 块
+2. 提取**两端都在列表里**的 `Connector`
+3. 提取块引用到的 `TargetLine`（`locationLine`）
+4. 换 Id、包名、坐标，插入目标的 `Main/Presentation`，补齐库依赖
+
+限制：**必须把整条链路上的块都列出来**。只选中间两个，链条会断开（脚本不会自动补中间块）。运行后检查输出的 `dangling refs`，应为 0。
+
 ## 脚本
 
 - `scripts/inspect_alp.py`：输出 `.alp` 的结构摘要（智能体、块、连接、3D、实验），用于选型和比对。
 - `scripts/clone_template.py`：复制官方示例并改模型名，输出新 `.alp`。
+- `scripts/graft_blocks.py`：从示例整段搬运块、连接器、目标线到目标模型。
 
-两个脚本都不依赖 AnyLogic 运行。
+三个脚本都不依赖 AnyLogic 运行。
 
 ## 与 other skills 的分工
 

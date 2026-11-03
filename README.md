@@ -20,6 +20,7 @@ AnyLogic 8.x 模型构建技能：**复制已验证的官方示例，而不是�
 - `references/pitfalls.md` — 实测踩过的 10 个坑
 - `scripts/inspect_alp.py` — 解析任意 `.alp` 的结构摘要
 - `scripts/clone_template.py` — 复制官方示例并改模型名
+- `scripts/graft_blocks.py` — 从示例整段搬运块/连接器/目标线到目标模型
 
 ## 用法
 
